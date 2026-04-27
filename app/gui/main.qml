@@ -19,6 +19,7 @@ ApplicationWindow {
     property bool clearOnBack: false
 
     id: window
+    title: "Moonlight (spotco build)"
     width: 1280
     height: 600
 

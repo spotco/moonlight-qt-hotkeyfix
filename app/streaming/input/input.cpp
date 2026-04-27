@@ -67,13 +67,13 @@ SdlInputHandler::SdlInputHandler(StreamingPreferences& prefs, int streamWidth, i
 
     // Populate special key combo configuration
     m_SpecialKeyCombos[KeyComboQuit].keyCombo = KeyComboQuit;
-    m_SpecialKeyCombos[KeyComboQuit].keyCode = SDLK_q;
-    m_SpecialKeyCombos[KeyComboQuit].scanCode = SDL_SCANCODE_Q;
+    m_SpecialKeyCombos[KeyComboQuit].keyCode = SDLK_MINUS;
+    m_SpecialKeyCombos[KeyComboQuit].scanCode = SDL_SCANCODE_MINUS;
     m_SpecialKeyCombos[KeyComboQuit].enabled = true;
 
     m_SpecialKeyCombos[KeyComboUngrabInput].keyCombo = KeyComboUngrabInput;
-    m_SpecialKeyCombos[KeyComboUngrabInput].keyCode = SDLK_z;
-    m_SpecialKeyCombos[KeyComboUngrabInput].scanCode = SDL_SCANCODE_Z;
+    m_SpecialKeyCombos[KeyComboUngrabInput].keyCode = SDLK_PLUS;
+    m_SpecialKeyCombos[KeyComboUngrabInput].scanCode = SDL_SCANCODE_EQUALS;
     m_SpecialKeyCombos[KeyComboUngrabInput].enabled = QGuiApplication::platformName() != "eglfs";
 
     m_SpecialKeyCombos[KeyComboToggleFullScreen].keyCombo = KeyComboToggleFullScreen;
@@ -84,7 +84,7 @@ SdlInputHandler::SdlInputHandler(StreamingPreferences& prefs, int streamWidth, i
     m_SpecialKeyCombos[KeyComboToggleStatsOverlay].keyCombo = KeyComboToggleStatsOverlay;
     m_SpecialKeyCombos[KeyComboToggleStatsOverlay].keyCode = SDLK_s;
     m_SpecialKeyCombos[KeyComboToggleStatsOverlay].scanCode = SDL_SCANCODE_S;
-    m_SpecialKeyCombos[KeyComboToggleStatsOverlay].enabled = true;
+    m_SpecialKeyCombos[KeyComboToggleStatsOverlay].enabled = false;
 
     m_SpecialKeyCombos[KeyComboToggleMouseMode].keyCombo = KeyComboToggleMouseMode;
     m_SpecialKeyCombos[KeyComboToggleMouseMode].keyCode = SDLK_m;
