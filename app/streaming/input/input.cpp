@@ -77,8 +77,8 @@ SdlInputHandler::SdlInputHandler(StreamingPreferences& prefs, int streamWidth, i
     m_SpecialKeyCombos[KeyComboUngrabInput].enabled = QGuiApplication::platformName() != "eglfs";
 
     m_SpecialKeyCombos[KeyComboToggleFullScreen].keyCombo = KeyComboToggleFullScreen;
-    m_SpecialKeyCombos[KeyComboToggleFullScreen].keyCode = SDLK_x;
-    m_SpecialKeyCombos[KeyComboToggleFullScreen].scanCode = SDL_SCANCODE_X;
+    m_SpecialKeyCombos[KeyComboToggleFullScreen].keyCode = SDLK_0;
+    m_SpecialKeyCombos[KeyComboToggleFullScreen].scanCode = SDL_SCANCODE_0;
     m_SpecialKeyCombos[KeyComboToggleFullScreen].enabled = QGuiApplication::platformName() != "eglfs";
 
     m_SpecialKeyCombos[KeyComboToggleStatsOverlay].keyCombo = KeyComboToggleStatsOverlay;
@@ -87,29 +87,29 @@ SdlInputHandler::SdlInputHandler(StreamingPreferences& prefs, int streamWidth, i
     m_SpecialKeyCombos[KeyComboToggleStatsOverlay].enabled = false;
 
     m_SpecialKeyCombos[KeyComboToggleMouseMode].keyCombo = KeyComboToggleMouseMode;
-    m_SpecialKeyCombos[KeyComboToggleMouseMode].keyCode = SDLK_m;
-    m_SpecialKeyCombos[KeyComboToggleMouseMode].scanCode = SDL_SCANCODE_M;
+    m_SpecialKeyCombos[KeyComboToggleMouseMode].keyCode = SDLK_RIGHTBRACKET;
+    m_SpecialKeyCombos[KeyComboToggleMouseMode].scanCode = SDL_SCANCODE_RIGHTBRACKET;
     m_SpecialKeyCombos[KeyComboToggleMouseMode].enabled = true;
 
     m_SpecialKeyCombos[KeyComboToggleCursorHide].keyCombo = KeyComboToggleCursorHide;
-    m_SpecialKeyCombos[KeyComboToggleCursorHide].keyCode = SDLK_c;
-    m_SpecialKeyCombos[KeyComboToggleCursorHide].scanCode = SDL_SCANCODE_C;
+    m_SpecialKeyCombos[KeyComboToggleCursorHide].keyCode = SDLK_LEFTBRACKET;
+    m_SpecialKeyCombos[KeyComboToggleCursorHide].scanCode = SDL_SCANCODE_LEFTBRACKET;
     m_SpecialKeyCombos[KeyComboToggleCursorHide].enabled = true;
 
     m_SpecialKeyCombos[KeyComboToggleMinimize].keyCombo = KeyComboToggleMinimize;
-    m_SpecialKeyCombos[KeyComboToggleMinimize].keyCode = SDLK_d;
-    m_SpecialKeyCombos[KeyComboToggleMinimize].scanCode = SDL_SCANCODE_D;
+    m_SpecialKeyCombos[KeyComboToggleMinimize].keyCode = SDLK_BACKSPACE;
+    m_SpecialKeyCombos[KeyComboToggleMinimize].scanCode = SDL_SCANCODE_BACKSPACE;
     m_SpecialKeyCombos[KeyComboToggleMinimize].enabled = QGuiApplication::platformName() != "eglfs";
 
     m_SpecialKeyCombos[KeyComboPasteText].keyCombo = KeyComboPasteText;
     m_SpecialKeyCombos[KeyComboPasteText].keyCode = SDLK_v;
     m_SpecialKeyCombos[KeyComboPasteText].scanCode = SDL_SCANCODE_V;
-    m_SpecialKeyCombos[KeyComboPasteText].enabled = true;
+    m_SpecialKeyCombos[KeyComboPasteText].enabled = false;
 
     m_SpecialKeyCombos[KeyComboTogglePointerRegionLock].keyCombo = KeyComboTogglePointerRegionLock;
     m_SpecialKeyCombos[KeyComboTogglePointerRegionLock].keyCode = SDLK_l;
     m_SpecialKeyCombos[KeyComboTogglePointerRegionLock].scanCode = SDL_SCANCODE_L;
-    m_SpecialKeyCombos[KeyComboTogglePointerRegionLock].enabled = true;
+    m_SpecialKeyCombos[KeyComboTogglePointerRegionLock].enabled = false;
 
     m_OldIgnoreDevices = SDL_GetHint(SDL_HINT_GAMECONTROLLER_IGNORE_DEVICES);
     m_OldIgnoreDevicesExcept = SDL_GetHint(SDL_HINT_GAMECONTROLLER_IGNORE_DEVICES_EXCEPT);
