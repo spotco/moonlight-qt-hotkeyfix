@@ -139,6 +139,14 @@ void SdlInputHandler::performSpecialKeyCombo(KeyCombo combo)
         updatePointerRegionLock();
         break;
 
+    case KeyComboBlockHostCursorToggle:
+    case KeyComboBlockHostMonitorSwitchF1:
+    case KeyComboBlockHostMonitorSwitchF12:
+        // Consume host-side shortcuts so they cannot change the host state.
+        SDL_LogInfo(SDL_LOG_CATEGORY_APPLICATION,
+                    "Blocked host shortcut combo");
+        break;
+
     default:
         Q_UNREACHABLE();
     }

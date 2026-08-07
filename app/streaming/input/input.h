@@ -131,6 +131,9 @@ private:
         KeyComboToggleMinimize,
         KeyComboPasteText,
         KeyComboTogglePointerRegionLock,
+        KeyComboBlockHostCursorToggle,
+        KeyComboBlockHostMonitorSwitchF1,
+        KeyComboBlockHostMonitorSwitchF12,
         KeyComboMax
     };
 

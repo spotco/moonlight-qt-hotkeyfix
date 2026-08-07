@@ -363,38 +363,6 @@ void SdlInputHandler::handleControllerButtonEvent(SDL_ControllerButtonEvent* eve
         }
     }
 
-    // Handle Start+Select+L1+R1 as a gamepad quit combo
-    if (state->buttons == (PLAY_FLAG | BACK_FLAG | LB_FLAG | RB_FLAG) && qgetenv("NO_GAMEPAD_QUIT") != "1") {
-        SDL_LogInfo(SDL_LOG_CATEGORY_APPLICATION,
-                    "Detected quit gamepad button combo");
-
-        // Push a quit event to the main loop
-        SDL_Event event;
-        event.type = SDL_QUIT;
-        event.quit.timestamp = SDL_GetTicks();
-        SDL_PushEvent(&event);
-
-        // Clear buttons down on this gamepad
-        LiSendMultiControllerEvent(state->index, m_GamepadMask,
-                                   0, 0, 0, 0, 0, 0, 0);
-        return;
-    }
-
-    // Handle Select+L1+R1+X as a gamepad overlay combo
-    if (state->buttons == (BACK_FLAG | LB_FLAG | RB_FLAG | X_FLAG)) {
-        SDL_LogInfo(SDL_LOG_CATEGORY_APPLICATION,
-                    "Detected stats toggle gamepad combo");
-
-        // Toggle the stats overlay
-        Session::get()->getOverlayManager().setOverlayState(Overlay::OverlayDebug,
-                                                            !Session::get()->getOverlayManager().isOverlayEnabled(Overlay::OverlayDebug));
-
-        // Clear buttons down on this gamepad
-        LiSendMultiControllerEvent(state->index, m_GamepadMask,
-                                   0, 0, 0, 0, 0, 0, 0);
-        return;
-    }
-
     // Only send the gamepad state to the host if it's not in mouse emulation mode
     if (state->mouseEmulationTimer == 0) {
         sendGamepadState(state);

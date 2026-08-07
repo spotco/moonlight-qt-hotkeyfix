@@ -79,7 +79,7 @@ SdlInputHandler::SdlInputHandler(StreamingPreferences& prefs, int streamWidth, i
     m_SpecialKeyCombos[KeyComboToggleFullScreen].keyCombo = KeyComboToggleFullScreen;
     m_SpecialKeyCombos[KeyComboToggleFullScreen].keyCode = SDLK_0;
     m_SpecialKeyCombos[KeyComboToggleFullScreen].scanCode = SDL_SCANCODE_0;
-    m_SpecialKeyCombos[KeyComboToggleFullScreen].enabled = QGuiApplication::platformName() != "eglfs";
+    m_SpecialKeyCombos[KeyComboToggleFullScreen].enabled = false;
 
     m_SpecialKeyCombos[KeyComboToggleStatsOverlay].keyCombo = KeyComboToggleStatsOverlay;
     m_SpecialKeyCombos[KeyComboToggleStatsOverlay].keyCode = SDLK_s;
@@ -89,12 +89,12 @@ SdlInputHandler::SdlInputHandler(StreamingPreferences& prefs, int streamWidth, i
     m_SpecialKeyCombos[KeyComboToggleMouseMode].keyCombo = KeyComboToggleMouseMode;
     m_SpecialKeyCombos[KeyComboToggleMouseMode].keyCode = SDLK_RIGHTBRACKET;
     m_SpecialKeyCombos[KeyComboToggleMouseMode].scanCode = SDL_SCANCODE_RIGHTBRACKET;
-    m_SpecialKeyCombos[KeyComboToggleMouseMode].enabled = true;
+    m_SpecialKeyCombos[KeyComboToggleMouseMode].enabled = false;
 
     m_SpecialKeyCombos[KeyComboToggleCursorHide].keyCombo = KeyComboToggleCursorHide;
     m_SpecialKeyCombos[KeyComboToggleCursorHide].keyCode = SDLK_LEFTBRACKET;
     m_SpecialKeyCombos[KeyComboToggleCursorHide].scanCode = SDL_SCANCODE_LEFTBRACKET;
-    m_SpecialKeyCombos[KeyComboToggleCursorHide].enabled = true;
+    m_SpecialKeyCombos[KeyComboToggleCursorHide].enabled = false;
 
     m_SpecialKeyCombos[KeyComboToggleMinimize].keyCombo = KeyComboToggleMinimize;
     m_SpecialKeyCombos[KeyComboToggleMinimize].keyCode = SDLK_BACKSPACE;
@@ -110,6 +110,23 @@ SdlInputHandler::SdlInputHandler(StreamingPreferences& prefs, int streamWidth, i
     m_SpecialKeyCombos[KeyComboTogglePointerRegionLock].keyCode = SDLK_l;
     m_SpecialKeyCombos[KeyComboTogglePointerRegionLock].scanCode = SDL_SCANCODE_L;
     m_SpecialKeyCombos[KeyComboTogglePointerRegionLock].enabled = false;
+
+    // Consume this combo so it cannot reach Sunshine, where it toggles the host cursor.
+    m_SpecialKeyCombos[KeyComboBlockHostCursorToggle].keyCombo = KeyComboBlockHostCursorToggle;
+    m_SpecialKeyCombos[KeyComboBlockHostCursorToggle].keyCode = SDLK_n;
+    m_SpecialKeyCombos[KeyComboBlockHostCursorToggle].scanCode = SDL_SCANCODE_N;
+    m_SpecialKeyCombos[KeyComboBlockHostCursorToggle].enabled = true;
+
+    // Consume Sunshine's host-side monitor switching shortcuts.
+    m_SpecialKeyCombos[KeyComboBlockHostMonitorSwitchF1].keyCombo = KeyComboBlockHostMonitorSwitchF1;
+    m_SpecialKeyCombos[KeyComboBlockHostMonitorSwitchF1].keyCode = SDLK_F1;
+    m_SpecialKeyCombos[KeyComboBlockHostMonitorSwitchF1].scanCode = SDL_SCANCODE_F1;
+    m_SpecialKeyCombos[KeyComboBlockHostMonitorSwitchF1].enabled = true;
+
+    m_SpecialKeyCombos[KeyComboBlockHostMonitorSwitchF12].keyCombo = KeyComboBlockHostMonitorSwitchF12;
+    m_SpecialKeyCombos[KeyComboBlockHostMonitorSwitchF12].keyCode = SDLK_F12;
+    m_SpecialKeyCombos[KeyComboBlockHostMonitorSwitchF12].scanCode = SDL_SCANCODE_F12;
+    m_SpecialKeyCombos[KeyComboBlockHostMonitorSwitchF12].enabled = true;
 
     m_OldIgnoreDevices = SDL_GetHint(SDL_HINT_GAMECONTROLLER_IGNORE_DEVICES);
     m_OldIgnoreDevicesExcept = SDL_GetHint(SDL_HINT_GAMECONTROLLER_IGNORE_DEVICES_EXCEPT);
