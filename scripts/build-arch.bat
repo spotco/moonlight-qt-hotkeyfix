@@ -206,6 +206,16 @@ echo Deploying Qt dependencies
 %WINDEPLOYQT_CMD% --dir %DEPLOY_FOLDER% --%BUILD_CONFIG% --qmldir %SOURCE_ROOT%\app\gui --no-opengl-sw --no-compiler-runtime --no-sql %WINDEPLOYQT_ARGS% %BUILD_FOLDER%\app\%BUILD_CONFIG%\Moonlight.exe
 if !ERRORLEVEL! NEQ 0 goto Error
 
+rem Qt 6 defaults to Schannel on Windows. Moonlight forces the OpenSSL TLS
+rem backend at startup, so the portable/deploy tree must include that plugin
+rem even if windeployqt omitted it.
+if x%QT_PATH:\5.=%==x%QT_PATH% (
+    echo Ensuring OpenSSL Qt TLS plugin is deployed
+    if not exist "%DEPLOY_FOLDER%\tls" mkdir "%DEPLOY_FOLDER%\tls"
+    copy /Y "%QT_PATH%\..\plugins\tls\qopensslbackend.dll" "%DEPLOY_FOLDER%\tls\"
+    if !ERRORLEVEL! NEQ 0 goto Error
+)
+
 echo Deleting unused styles
 rem Qt 5.x directories
 rmdir /s /q %DEPLOY_FOLDER%\QtQuick\Controls.2\Fusion

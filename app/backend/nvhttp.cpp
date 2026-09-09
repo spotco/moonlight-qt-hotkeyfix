@@ -11,12 +11,29 @@
 #include <QImageReader>
 #include <QtEndian>
 #include <QNetworkProxy>
+#include <QMutex>
+#include <QMutexLocker>
 
 #define FAST_FAIL_TIMEOUT_MS 2000
 #define REQUEST_TIMEOUT_MS 5000
 #define LAUNCH_TIMEOUT_MS 120000
 #define RESUME_TIMEOUT_MS 30000
 #define QUIT_TIMEOUT_MS 30000
+
+namespace {
+
+#if defined(Q_OS_WIN32)
+// Serialize Moonlight's client-certificate HTTPS on Windows. Concurrent
+// QNetworkAccessManager requests that share IdentityManager's client key can
+// race inside Schannel/NCrypt (and still benefit from ordering on OpenSSL).
+QMutex& clientCertRequestMutex()
+{
+    static QMutex mutex;
+    return mutex;
+}
+#endif
+
+} // namespace
 
 NvHTTP::NvHTTP(NvAddress address, uint16_t httpsPort, QSslCertificate serverCert) :
     m_ServerCert(serverCert)
@@ -369,6 +386,10 @@ NvHTTP::verifyResponseStatus(QString xml)
 QImage
 NvHTTP::getBoxArt(int appId)
 {
+#if defined(Q_OS_WIN32)
+    QMutexLocker locker(&clientCertRequestMutex());
+#endif
+
     QNetworkReply* reply = openConnection(m_BaseUrlHttps,
                                           "appasset",
                                           "appid="+QString::number(appId)+
@@ -376,7 +397,7 @@ NvHTTP::getBoxArt(int appId)
                                           REQUEST_TIMEOUT_MS,
                                           NvLogLevel::NVLL_VERBOSE);
     QImage image = QImageReader(reply).read();
-    delete reply;
+    destroyReply(reply);
 
     return image;
 }
@@ -438,6 +459,16 @@ void NvHTTP::handleSslErrors(QNetworkReply* reply, const QList<QSslError>& error
     }
 }
 
+void NvHTTP::destroyReply(QNetworkReply* reply)
+{
+    delete reply;
+
+    // We must clear out cached authentication and connections or
+    // GFE will puke next time. Always do this after the reply is gone so the
+    // TLS backend is not still holding request state.
+    m_Nam.clearAccessCache();
+}
+
 QString
 NvHTTP::openConnectionToString(QUrl baseUrl,
                                QString command,
@@ -445,6 +476,10 @@ NvHTTP::openConnectionToString(QUrl baseUrl,
                                int timeoutMs,
                                NvLogLevel logLevel)
 {
+#if defined(Q_OS_WIN32)
+    QMutexLocker locker(&clientCertRequestMutex());
+#endif
+
     QNetworkReply* reply = openConnection(baseUrl, command, arguments, timeoutMs, logLevel);
     QString ret;
 
@@ -457,7 +492,7 @@ NvHTTP::openConnectionToString(QUrl baseUrl,
 #endif
 
     ret = stream.readAll();
-    delete reply;
+    destroyReply(reply);
 
     return ret;
 }
@@ -503,6 +538,24 @@ NvHTTP::openConnection(QUrl baseUrl,
 
     QNetworkReply* reply = m_Nam.get(request);
 
+    // Diagnostic-only stress hook. Qt's normal path clears the access cache
+    // after the request completes. In this mode, deliberately do that while
+    // Schannel may still be using the request so a suspected teardown race can
+    // be tested without changing normal application behavior.
+    if (qEnvironmentVariableIsSet("MOONLIGHT_TLS_STRESS_CLEAR_ACCESS_CACHE")) {
+        int delayMs = 1;
+        bool ok = false;
+        const int configuredDelay = QString::fromLocal8Bit(qgetenv("MOONLIGHT_TLS_STRESS_CLEAR_DELAY_MS")).toInt(&ok);
+        if (ok && configuredDelay >= 0) {
+            delayMs = configuredDelay;
+        }
+
+        QTimer::singleShot(delayMs, &m_Nam, [this]() {
+            qWarning() << "TLSSTRESS forcing QNetworkAccessManager::clearAccessCache() while request is pending";
+            m_Nam.clearAccessCache();
+        });
+    }
+
     // Run the request with a timeout if requested
     QEventLoop loop;
     connect(reply, &QNetworkReply::finished, &loop, &QEventLoop::quit);
@@ -524,11 +577,8 @@ NvHTTP::openConnection(QUrl baseUrl,
         reply->abort();
     }
 
-    // We must clear out cached authentication and connections or
-    // GFE will puke next time
-    m_Nam.clearAccessCache();
-
-    // Handle error
+    // Handle error. Always destroyReply() before throwing so clearAccessCache
+    // cannot race with a live QNetworkReply / TLS session.
     if (reply->error() != QNetworkReply::NoError)
     {
         if (logLevel >= NvLogLevel::NVLL_ERROR) {
@@ -539,20 +589,21 @@ NvHTTP::openConnection(QUrl baseUrl,
             // This will trigger falling back to HTTP for the serverinfo query
             // then pairing again to get the updated certificate.
             GfeHttpResponseException exception(401, "Server certificate mismatch");
-            delete reply;
+            destroyReply(reply);
             throw exception;
         }
         else if (reply->error() == QNetworkReply::OperationCanceledError) {
             QtNetworkReplyException exception(QNetworkReply::TimeoutError, "Request timed out");
-            delete reply;
+            destroyReply(reply);
             throw exception;
         }
         else {
             QtNetworkReplyException exception(reply->error(), reply->errorString());
-            delete reply;
+            destroyReply(reply);
             throw exception;
         }
     }
 
+    // Success: caller owns the reply and must call destroyReply() after reading.
     return reply;
 }

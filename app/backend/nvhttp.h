@@ -188,6 +188,12 @@ private:
     void
     handleSslErrors(QNetworkReply* reply, const QList<QSslError>& errors);
 
+    // Deletes the reply, then flushes QNAM connection/auth caches. GFE requires
+    // the cache clear, but doing it while the reply (and Schannel/OpenSSL state)
+    // is still alive can UAF inside the Windows TLS stack.
+    void
+    destroyReply(QNetworkReply* reply);
+
     QNetworkReply*
     openConnection(QUrl baseUrl,
                    QString command,

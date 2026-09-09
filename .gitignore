@@ -5,3 +5,6 @@
 build/
 config.tests/*/.qmake.stash
 config.tests/*/Makefile
+Temp/
+Microsoft/
+CrashDumps/

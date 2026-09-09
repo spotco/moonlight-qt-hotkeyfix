@@ -177,6 +177,7 @@ SOURCES += \
     backend/identitymanager.cpp \
     backend/nvcomputer.cpp \
     backend/nvhttp.cpp \
+    backend/tlsstress.cpp \
     backend/nvpairingmanager.cpp \
     backend/computermanager.cpp \
     backend/boxartmanager.cpp \
@@ -219,6 +220,7 @@ HEADERS += \
     backend/identitymanager.h \
     backend/nvcomputer.h \
     backend/nvhttp.h \
+    backend/tlsstress.h \
     backend/nvpairingmanager.h \
     backend/computermanager.h \
     backend/boxartmanager.h \

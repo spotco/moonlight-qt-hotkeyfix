@@ -12,6 +12,9 @@
 #include <QElapsedTimer>
 #include <QTemporaryFile>
 #include <QRegularExpression>
+#if QT_VERSION >= QT_VERSION_CHECK(6, 1, 0)
+#include <QSslSocket>
+#endif
 
 // Don't let SDL hook our main function, since Qt is already
 // doing the same thing. This needs to be before any headers
@@ -43,6 +46,7 @@
 #include "gui/appmodel.h"
 #include "backend/autoupdatechecker.h"
 #include "backend/computermanager.h"
+#include "backend/tlsstress.h"
 #include "backend/systemproperties.h"
 #include "streaming/session.h"
 #include "settings/streamingpreferences.h"
@@ -563,6 +567,24 @@ int main(int argc, char *argv[])
 
     QGuiApplication app(argc, argv);
 
+#if defined(Q_OS_WIN32) && QT_VERSION >= QT_VERSION_CHECK(6, 1, 0)
+    // Prefer OpenSSL for Qt Network TLS on Windows. The default Schannel
+    // backend has raced inside ncrypt.dll during concurrent client-cert HTTPS
+    // (QNetworkAccessManager clearAccessCache / multi-thread polling). This
+    // must run before IdentityManager or any QSsl* / QNetworkAccessManager TLS
+    // use. Requires tls/qopensslbackend.dll next to the app (windeployqt).
+    if (!QSslSocket::setActiveBackend(QStringLiteral("openssl"))) {
+        qWarning() << "Failed to activate OpenSSL TLS backend; available:"
+                   << QSslSocket::availableBackends()
+                   << "active:" << QSslSocket::activeBackend();
+    }
+    else {
+        qInfo() << "Using OpenSSL TLS backend for Qt Network:"
+                << QSslSocket::activeBackend()
+                << QSslSocket::sslLibraryVersionString();
+    }
+#endif
+
 #ifndef STEAM_LINK
     // Force use of the KMSDRM backend for SDL when using Qt platform plugins
     // that directly draw to the display without a windowing system.
@@ -705,6 +727,41 @@ int main(int argc, char *argv[])
 
     // Create the identity manager on the main thread
     IdentityManager::get();
+
+    // Temporary diagnostic mode for reproducing the Windows Schannel/NCrypt
+    // crash. It intentionally avoids loading QML or starting a normal GUI.
+    // Enable with MOONLIGHT_TLS_STRESS=1.
+    if (qEnvironmentVariableIsSet("MOONLIGHT_TLS_STRESS")) {
+        ComputerManager computerManager(StreamingPreferences::get());
+        TlsStressRunner stressRunner;
+
+        if (qEnvironmentVariableIsSet("MOONLIGHT_TLS_STRESS_START_POLLING")) {
+            qInfo() << "TLSSTRESS starting ComputerManager polling before stress workers";
+            computerManager.startPolling();
+        }
+
+        QObject::connect(&stressRunner, &TlsStressRunner::finished,
+                         &app, [&app](int exitCode) {
+            app.exit(exitCode);
+        });
+
+        const int startDelayMs = qMax(0, qEnvironmentVariableIntValue("MOONLIGHT_TLS_STRESS_START_DELAY_MS"));
+        auto startStress = [&]() {
+            if (!stressRunner.start(computerManager.getComputers())) {
+                app.exit(2);
+            }
+        };
+        if (startDelayMs != 0) {
+            QTimer::singleShot(startDelayMs, &stressRunner, startStress);
+        }
+        else {
+            QTimer::singleShot(0, &stressRunner, startStress);
+        }
+
+        int err = app.exec();
+        QThreadPool::globalInstance()->waitForDone(30000);
+        return err;
+    }
 
     // We require the Material theme
     QQuickStyle::setStyle("Material");
