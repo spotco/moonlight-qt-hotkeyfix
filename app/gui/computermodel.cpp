@@ -1,4 +1,5 @@
 #include "computermodel.h"
+#include "backend/nvaddress.h"
 
 #include <QThreadPool>
 #include <QUdpSocket>
@@ -254,7 +255,7 @@ class DeferredHostUdpTestTask : public QObject, public QRunnable
     Q_OBJECT
 public:
     DeferredHostUdpTestTask(QString host, uint16_t httpPort)
-        : m_Host(std::move(host)), m_HttpPort(httpPort) {}
+        : m_Host(host), m_HttpPort(httpPort) {}
 
     void run()
     {
