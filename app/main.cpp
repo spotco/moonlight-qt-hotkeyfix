@@ -579,7 +579,10 @@ int main(int argc, char *argv[])
                    << "active:" << QSslSocket::activeBackend();
     }
     else {
-        qInfo() << "Using OpenSSL TLS backend for Qt Network:"
+        qInfo() << "spotcobuild: binary build time:" << __DATE__ << __TIME__
+             << "VERSION_STR" << VERSION_STR;
+
+    qInfo() << "Using OpenSSL TLS backend for Qt Network:"
                 << QSslSocket::activeBackend()
                 << QSslSocket::sslLibraryVersionString();
     }
