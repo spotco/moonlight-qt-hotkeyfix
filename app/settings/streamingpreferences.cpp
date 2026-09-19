@@ -133,7 +133,7 @@ void StreamingPreferences::reload()
     framePacing = settings.value(SER_FRAMEPACING, false).toBool();
     connectionWarnings = settings.value(SER_CONNWARNINGS, true).toBool();
     richPresence = settings.value(SER_RICHPRESENCE, true).toBool();
-    gamepadMouse = settings.value(SER_GAMEPADMOUSE, true).toBool();
+    gamepadMouse = false; // spotcobuild: fully disable Start-hold gamepad mouse mode
     detectNetworkBlocking = settings.value(SER_DETECTNETBLOCKING, true).toBool();
     showPerformanceOverlay = settings.value(SER_SHOWPERFOVERLAY, false).toBool();
     packetSize = settings.value(SER_PACKETSIZE, 0).toInt();
@@ -323,7 +323,7 @@ void StreamingPreferences::save()
     settings.setValue(SER_FRAMEPACING, framePacing);
     settings.setValue(SER_CONNWARNINGS, connectionWarnings);
     settings.setValue(SER_RICHPRESENCE, richPresence);
-    settings.setValue(SER_GAMEPADMOUSE, gamepadMouse);
+    settings.setValue(SER_GAMEPADMOUSE, false); // spotcobuild: keep disabled
     settings.setValue(SER_PACKETSIZE, packetSize);
     settings.setValue(SER_DETECTNETBLOCKING, detectNetworkBlocking);
     settings.setValue(SER_SHOWPERFOVERLAY, showPerformanceOverlay);

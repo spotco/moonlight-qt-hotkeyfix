@@ -332,7 +332,7 @@ void SdlInputHandler::handleControllerButtonEvent(SDL_ControllerButtonEvent* eve
                                 "Mouse emulation deactivated");
                     Session::get()->notifyMouseEmulationMode(false);
                 }
-                else if (m_GamepadMouse) {
+                else if (false && m_GamepadMouse) { // spotcobuild: never activate gamepad mouse mode
                     // Send the start button up event to the host, since we won't do it below
                     sendGamepadState(state);
 

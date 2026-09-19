@@ -11,7 +11,7 @@
 
 SdlInputHandler::SdlInputHandler(StreamingPreferences& prefs, int streamWidth, int streamHeight)
     : m_MultiController(prefs.multiController),
-      m_GamepadMouse(prefs.gamepadMouse),
+      m_GamepadMouse(false), // spotcobuild: gamepad mouse mode fully disabled
       m_SwapMouseButtons(prefs.swapMouseButtons),
       m_ReverseScrollDirection(prefs.reverseScrollDirection),
       m_SwapFaceButtons(prefs.swapFaceButtons),

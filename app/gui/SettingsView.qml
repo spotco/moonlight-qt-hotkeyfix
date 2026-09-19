@@ -1436,13 +1436,16 @@ Flickable {
 
                 CheckBox {
                     id: gamepadMouseCheck
+                    // spotcobuild: gamepad mouse mode fully disabled
+                    visible: false
+                    enabled: false
                     hoverEnabled: true
                     width: parent.width
                     text: qsTr("Enable mouse control with gamepads by holding the 'Start' button")
                     font.pointSize: 12
-                    checked: StreamingPreferences.gamepadMouse
+                    checked: false
                     onCheckedChanged: {
-                        StreamingPreferences.gamepadMouse = checked
+                        StreamingPreferences.gamepadMouse = false
                     }
                 }
 
