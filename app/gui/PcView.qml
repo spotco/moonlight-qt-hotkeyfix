@@ -84,6 +84,7 @@ CenteredGridView {
         model.initialize(ComputerManager)
         model.pairingCompleted.connect(pairingComplete)
         model.connectionTestCompleted.connect(testConnectionDialog.connectionTestComplete)
+        model.hostUdpTestCompleted.connect(hostUdpTestDialog.hostUdpTestComplete)
         return model
     }
 
@@ -195,6 +196,14 @@ CenteredGridView {
                     onTriggered: {
                         computerModel.testConnectionForComputer(index)
                         testConnectionDialog.open()
+                    }
+                }
+                NavigableMenuItem {
+                    parentMenu: pcContextMenu
+                    text: qsTr("Test Host UDP")
+                    onTriggered: {
+                        computerModel.testHostUdpForComputer(index)
+                        hostUdpTestDialog.open()
                     }
                 }
 
@@ -354,6 +363,34 @@ CenteredGridView {
             }
 
             // Stop showing the spinner and show the image instead
+            showSpinner = false
+        }
+    }
+
+
+    NavigableMessageDialog {
+        id: hostUdpTestDialog
+        closePolicy: Popup.CloseOnEscape
+        standardButtons: Dialog.Ok
+
+        onAboutToShow: {
+            hostUdpTestDialog.text = qsTr("Testing UDP to THIS host PC (video/audio/control).") + "\n\n" +
+                                     qsTr("This is not the public qt.conntest network test.") + "\n\n" +
+                                     qsTr("Sending probes…")
+            showSpinner = true
+        }
+
+        function hostUdpTestComplete(report)
+        {
+            text = report
+            // Prefer check icon when any ECHO_OK present
+            if (report.indexOf("ECHO_OK") >= 0 && report.indexOf("ECHO_TIMEOUT") < 0) {
+                imageSrc = "qrc:/res/baseline-check_circle_outline-24px.svg"
+            } else if (report.indexOf("ECHO_OK") >= 0) {
+                imageSrc = "qrc:/res/baseline-warning-24px.svg"
+            } else {
+                imageSrc = "qrc:/res/baseline-error_outline-24px.svg"
+            }
             showSpinner = false
         }
     }

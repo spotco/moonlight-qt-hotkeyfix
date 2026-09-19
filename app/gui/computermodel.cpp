@@ -1,6 +1,12 @@
 #include "computermodel.h"
 
 #include <QThreadPool>
+#include <QUdpSocket>
+#include <QHostAddress>
+#include <QRandomGenerator>
+#include <QElapsedTimer>
+#include <QEventLoop>
+#include <QTimer>
 
 ComputerModel::ComputerModel(QObject* object)
     : QAbstractListModel(object) {}
@@ -241,5 +247,141 @@ void ComputerModel::handleComputerStateChanged(NvComputer* computer)
         emit dataChanged(createIndex(index, 0), createIndex(index, 0));
     }
 }
+
+
+class DeferredHostUdpTestTask : public QObject, public QRunnable
+{
+    Q_OBJECT
+public:
+    DeferredHostUdpTestTask(QString host, uint16_t httpPort)
+        : m_Host(std::move(host)), m_HttpPort(httpPort) {}
+
+    void run()
+    {
+        // GameStream UDP offsets from HTTP base B: video B+9, control B+10, audio B+11
+        struct PortSpec { const char* name; uint16_t port; };
+        const PortSpec ports[] = {
+            {"video", static_cast<uint16_t>(m_HttpPort + 9)},
+            {"control", static_cast<uint16_t>(m_HttpPort + 10)},
+            {"audio", static_cast<uint16_t>(m_HttpPort + 11)},
+        };
+
+        QString report;
+        report += QStringLiteral("Test Host UDP (THIS PC host — not public qt.conntest)\n");
+        report += QStringLiteral("Target: %1  HTTP base: %2\n\n").arg(m_Host).arg(m_HttpPort);
+
+        const QByteArray probePrefix = QByteArrayLiteral("SPOTCO_UDP_PROBE_V1");
+        const QByteArray ackPrefix = QByteArrayLiteral("SPOTCO_UDP_PROBE_ACK");
+
+        for (const auto& spec : ports) {
+            QUdpSocket sock;
+            if (!sock.bind(QHostAddress::Any, 0)) {
+                report += QStringLiteral("%1 UDP %2: BIND_FAIL\n").arg(spec.name).arg(spec.port);
+                continue;
+            }
+
+            quint64 nonceVal = QRandomGenerator::global()->generate64();
+            QByteArray nonce(reinterpret_cast<const char*>(&nonceVal), 8);
+            QByteArray payload = probePrefix + nonce;
+
+            QElapsedTimer timer;
+            timer.start();
+            bool echoOk = false;
+            qint64 rttMs = -1;
+
+            for (int i = 0; i < 3; ++i) {
+                sock.writeDatagram(payload, QHostAddress(m_Host), spec.port);
+            }
+
+            QEventLoop loop;
+            QTimer timeout;
+            timeout.setSingleShot(true);
+            QObject::connect(&timeout, &QTimer::timeout, &loop, &QEventLoop::quit);
+
+            auto tryRead = [&]() {
+                while (sock.hasPendingDatagrams()) {
+                    QByteArray datagram;
+                    datagram.resize(int(sock.pendingDatagramSize()));
+                    QHostAddress sender;
+                    quint16 senderPort = 0;
+                    sock.readDatagram(datagram.data(), datagram.size(), &sender, &senderPort);
+                    if (datagram.startsWith(ackPrefix)) {
+                        // Prefer matching nonce when present
+                        if (datagram.size() >= ackPrefix.size() + 8) {
+                            if (datagram.mid(ackPrefix.size(), 8) != nonce) {
+                                continue;
+                            }
+                        }
+                        echoOk = true;
+                        rttMs = timer.elapsed();
+                        loop.quit();
+                        return;
+                    }
+                }
+            };
+
+            QObject::connect(&sock, &QUdpSocket::readyRead, &loop, tryRead);
+            timeout.start(1500);
+            tryRead();
+            if (!echoOk) {
+                loop.exec();
+            }
+
+            if (echoOk) {
+                report += QStringLiteral("%1 UDP %2: SENT, ECHO_OK, rtt_ms=%3\n")
+                              .arg(spec.name).arg(spec.port).arg(rttMs);
+            } else {
+                report += QStringLiteral("%1 UDP %2: SENT, ECHO_TIMEOUT\n")
+                              .arg(spec.name).arg(spec.port);
+            }
+        }
+
+        report += QStringLiteral("\nOK = ECHO_OK on video+audio (+control if idle probe). "
+                                 "ECHO_TIMEOUT on video while audio OK suggests video UDP path blocked/asymmetric.\n");
+        emit hostUdpTestCompleted(report);
+    }
+
+signals:
+    void hostUdpTestCompleted(QString report);
+
+private:
+    QString m_Host;
+    uint16_t m_HttpPort;
+};
+
+void ComputerModel::testHostUdpForComputer(int computerIndex)
+{
+    Q_ASSERT(computerIndex < m_Computers.count());
+    NvComputer* computer = m_Computers[computerIndex];
+    QString host;
+    uint16_t httpPort = DEFAULT_HTTP_PORT;
+    {
+        QReadLocker lock(&computer->lock);
+        if (!computer->activeAddress.isNull()) {
+            host = computer->activeAddress.address();
+            httpPort = computer->activeAddress.port() ? computer->activeAddress.port() : DEFAULT_HTTP_PORT;
+        } else if (!computer->localAddress.isNull()) {
+            host = computer->localAddress.address();
+            httpPort = computer->localAddress.port() ? computer->localAddress.port() : DEFAULT_HTTP_PORT;
+        } else if (!computer->manualAddress.isNull()) {
+            host = computer->manualAddress.address();
+            httpPort = computer->manualAddress.port() ? computer->manualAddress.port() : DEFAULT_HTTP_PORT;
+        } else if (!computer->remoteAddress.isNull()) {
+            host = computer->remoteAddress.address();
+            httpPort = computer->remoteAddress.port() ? computer->remoteAddress.port() : DEFAULT_HTTP_PORT;
+        }
+    }
+
+    if (host.isEmpty()) {
+        emit hostUdpTestCompleted(QStringLiteral("Test Host UDP failed: no address for this PC."));
+        return;
+    }
+
+    DeferredHostUdpTestTask* task = new DeferredHostUdpTestTask(host, httpPort);
+    QObject::connect(task, &DeferredHostUdpTestTask::hostUdpTestCompleted,
+                     this, &ComputerModel::hostUdpTestCompleted);
+    QThreadPool::globalInstance()->start(task);
+}
+
 
 #include "computermodel.moc"
