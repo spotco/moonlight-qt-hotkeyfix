@@ -39,6 +39,8 @@ public:
 
     Q_INVOKABLE void testConnectionForComputer(int computerIndex);
 
+    Q_INVOKABLE void testHostUdpForComputer(int computerIndex);
+
     Q_INVOKABLE void wakeComputer(int computerIndex);
 
     Q_INVOKABLE void renameComputer(int computerIndex, QString name);
@@ -48,6 +50,7 @@ public:
 signals:
     void pairingCompleted(QVariant error);
     void connectionTestCompleted(int result, QString blockedPorts);
+    void hostUdpTestCompleted(QString report);
 
 private slots:
     void handleComputerStateChanged(NvComputer* computer);
